@@ -1,0 +1,3 @@
+[submodule "palworld-paldex-api"]
+	path = palworld-paldex-api
+	url = git@github.com:zshift/palworld-paldex-api.git

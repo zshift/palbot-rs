@@ -1,0 +1,20 @@
+version: '3.9'
+
+services:
+  paldex:
+    container_name: paldex
+    build:
+      context: palworld-paldex-api
+    restart: unless-stopped
+
+  paldex-bot:
+    container_name: bot
+    links:
+      - paldex:api
+    environment:
+      - RUST_LOG=palbot=debug
+      - PAL_API_URL=http://api:3000
+      - DISCORD_TOKEN=${DISCORD_TOKEN}
+    build:
+      context: .
+    restart: unless-stopped

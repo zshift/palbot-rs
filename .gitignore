@@ -2,3 +2,4 @@
 deploy.sh
 *.tar.gz
 *.tar
+.env
