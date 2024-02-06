@@ -5,7 +5,7 @@ RUN mkdir -p /src/app
 
 WORKDIR /src/app
 
-COPY Cargo.toml Cargo.lock .
+COPY Cargo.toml Cargo.lock ./
 
 COPY src src
 
