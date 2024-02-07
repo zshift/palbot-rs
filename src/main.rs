@@ -40,7 +40,7 @@ impl State {
     // Fetches a Pal from the API.
     async fn get_pal(&self, pal: &str) -> Result<Pal, PalError> {
         let mut url = self.pal_api_url.clone();
-        let query = format!("name={}", encode(&pal));
+        let query = format!("name={}", encode(pal));
         url.set_query(Some(&query));
 
         let response = reqwest::get(url).await.map_err(PalError::Reqwest)?;
@@ -150,7 +150,7 @@ async fn get_pal_names<T: IntoUrl + Display>(pal_ap_url: &T) -> Result<Vec<Strin
 /// Formats a name into a wiki link.
 fn format_wiki(name: &str) -> String {
     let name = name.to_title_case();
-    let url = name.replace(" ", "_");
+    let url = name.replace(' ', "_");
     format!("[{}](https://palworld.fandom.com/wiki/{})", name, url)
 }
 
@@ -173,7 +173,7 @@ async fn register(ctx: Context<'_>) -> Result<()> {
     debug!(
         "Registering application commands to {}#{}",
         if let Some(guild_id) = ctx.guild_id() {
-            guild_id.name(&ctx).unwrap_or("global".to_string())
+            guild_id.name(ctx).unwrap_or("global".to_string())
         } else {
             "global".to_string()
         },
