@@ -10,9 +10,9 @@ impl AutoCompleteEngine {
     pub fn new(data: &[String]) -> Self {
         let mut engine = SimSearch::new();
 
-        data.iter().for_each(|name| {
+        for name in data {
             engine.insert(name.clone(), name);
-        });
+        }
 
         Self { engine }
     }

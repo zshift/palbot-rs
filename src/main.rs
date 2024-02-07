@@ -1,5 +1,6 @@
 use std::env;
 use std::fmt::Display;
+use std::sync::Arc;
 
 use anyhow::{anyhow, Result};
 use autocomplete::AutoCompleteEngine;
@@ -20,7 +21,7 @@ mod autocomplete;
 
 struct State {
     pal_names: Vec<String>,
-    ac_eng: AutoCompleteEngine,
+    ac_eng: Arc<AutoCompleteEngine>,
     pal_api_url: Url,
 }
 
@@ -31,7 +32,7 @@ impl State {
         pal_names.sort();
 
         Ok(Self {
-            ac_eng: AutoCompleteEngine::new(&pal_names),
+            ac_eng: Arc::new(AutoCompleteEngine::new(&pal_names)),
             pal_names,
             pal_api_url,
         })
@@ -125,17 +126,26 @@ pub struct Aura {
     pub description: String,
 }
 
+// #[allow(clippy::unused_async)] // async required by poise `autocomplete` attribute macro
 async fn autocomplete_pal<'a>(ctx: Context<'_>, partial: &'a str) -> Vec<String> {
     if partial.is_empty() {
         return ctx.data().pal_names.clone();
     }
 
-    ctx.data().ac_eng.autocomplete(partial)
+    let ac_eng = ctx.data().ac_eng.clone();
+    let partial = partial.to_owned();
+    match tokio::task::spawn(async move { ac_eng.autocomplete(&partial) }).await {
+        Ok(pals) => pals,
+        Err(err) => {
+            error!("Error fetching autocomplete: {err:?}");
+            vec![]
+        }
+    }
 }
 
 /// Fetches the names of all Pals from the API.
-async fn get_pal_names<T: IntoUrl + Display>(pal_ap_url: &T) -> Result<Vec<String>> {
-    let pal_names = reqwest::get(format!("{}?limit=200", pal_ap_url))
+async fn get_pal_names<T: IntoUrl + Display>(pal_api_url: &T) -> Result<Vec<String>> {
+    let pal_names = reqwest::get(format!("{pal_api_url}?limit=200"))
         .await?
         .json::<APIResponse>()
         .await?
@@ -151,7 +161,7 @@ async fn get_pal_names<T: IntoUrl + Display>(pal_ap_url: &T) -> Result<Vec<Strin
 fn format_wiki(name: &str) -> String {
     let name = name.to_title_case();
     let url = name.replace(' ', "_");
-    format!("[{}](https://palworld.fandom.com/wiki/{})", name, url)
+    format!("[{name}](https://palworld.fandom.com/wiki/{url})")
 }
 
 /// Sends an error message to the channel from the original message.
@@ -163,7 +173,7 @@ async fn reply_with_error(ctx: &Context<'_>, error: &PalError) {
         }
     }
 
-    if let Err(why) = ctx.say(format!("**Error**: {}", error)).await {
+    if let Err(why) = ctx.say(format!("**Error**: {error}")).await {
         error!("Error sending message: {why:?}");
     }
 }
