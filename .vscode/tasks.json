@@ -28,6 +28,7 @@
 		{
 			"type": "cargo",
 			"command": "clippy",
+			"args": ["--", "-W", "clippy::pedantic"],
 			"problemMatcher": [
 				"$rustc"
 			],
